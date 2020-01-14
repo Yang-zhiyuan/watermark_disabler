@@ -1,5 +1,5 @@
 ## watermark_disabler
-A simple project made to disable the annoying Activate Windows watermark.
+A simple project made to disable the annoying "Activate Windows" watermark.
 
 ### concept
 In win32kfull.sys, there's a function called PaintWatermark that renders the activation watermark, this function gets called by xxxDesktopPaintCallback:
@@ -46,3 +46,8 @@ if ( should_draw_watermark )
 gpsi is a global pointer to a tagSERVERINFO structure, and gptiCurrent is a global pointer to a _THREADINFO structure.
 
 As you can see from the snippets above, this: gpsi->unk874h is checked to be 1 before drawing the watermark, so, by forcing it to be 0, the checks will fail and the watermark won't be drawn.
+
+### approach #2
+
+set `?gSafeModeStrLen@@3HA` to 0.
+pattern: 44 8B C8 44 89 0D + 7
