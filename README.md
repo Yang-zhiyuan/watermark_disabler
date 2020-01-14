@@ -50,4 +50,5 @@ As you can see from the snippets above, this: gpsi->unk874h is checked to be 1 b
 ### approach #2
 
 set `?gSafeModeStrLen@@3HA` to 0.
+
 pattern: 44 8B C8 44 89 0D + 7
