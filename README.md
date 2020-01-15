@@ -1,7 +1,7 @@
 ## watermark_disabler
 Disabling "Activate Windows" watermark made simple.
 
-## How does this work?
+## how does this work?
 The function responsible for drawing whole desktop including the watermark is xxxDesktopPaintCallback located in win32kfull.sys.
 Both of the approaches used by this project were found while analyzing functions further down in the callstack.
 
