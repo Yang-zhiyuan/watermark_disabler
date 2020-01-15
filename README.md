@@ -1,30 +1,15 @@
 ## watermark_disabler
-A simple project made to disable the annoying "Activate Windows" watermark.
+Disabling "Activate Windows" watermark made simple.
+
+## How does this work?
+The function responsible for drawing whole desktop including the watermark is xxxDesktopPaintCallback located in win32kfull.sys.
+Both of the approaches used by this project were found while analyzing functions further down in the callstack.
 
 ### approach #1
-In win32kfull.sys, there's a function called PaintWatermark that renders the activation watermark, this function gets called by xxxDesktopPaintCallback:
-
+As you can see from the snippets below, forcing gpsi->unk874h to be zero the checks will fail and watermark won't be drawn.
 ```cpp
-    if ( *(_DWORD *)(*(_QWORD *)gpsi + 0x874i64) )
-    {
-      v21 = *(_QWORD *)(*(_QWORD *)gptiCurrent + 0x1C0i64);
-      if ( v21 )
-        v22 = *(_QWORD *)(*(_QWORD *)(v21 + 8) + 0xA8i64);
-      else
-        v22 = 0i64;
-      v13 = v22 == 0;
-    }
-    else
-    {
-      v13 = 0;
-    }
-    if ( v13 )
-      PaintWatermark(v4, &v23);
-```
-
-Which can be simplified to:
-
-```cpp
+// global tagSERVERINFO* gpsi;
+// global _THREADINFO* gptiCurrent;
 if ( gpsi->unk874h != 0 )
 {
 	/* gptiCurrent + 0x1c0 = tagDESKTOP** */
@@ -43,14 +28,7 @@ if ( should_draw_watermark )
 	PaintWatermark(device_context, &desktop_rect);
 ```
 
-gpsi is a global pointer to a tagSERVERINFO structure, and gptiCurrent is a global pointer to a _THREADINFO structure.
-
-As you can see from the snippets above, this: gpsi->unk874h is checked to be 1 before drawing the watermark, so, by forcing it to be 0, the checks will fail and the watermark won't be drawn.
-
 ### approach #2
-
 PaintWatermark calls GreExtTextOutWInternal (which is the internal function for ExtTextOutW/NtGdiExtTextOutW in wingdi.h). 
 
-The argument passed for size is a global called "gSafeModeStrLen", by setting the size to 0, the string won't be rendered. I left below a pattern for the global in win32kfull.
-
-pattern: 44 8B C8 44 89 0D + 7
+The argument passed for size is a global called "gSafeModeStrLen", by setting the size to 0, the string won't be rendered. The pattern for the aforementioned global inside win32kfull is 44 8B C8 44 89 0D + 7
