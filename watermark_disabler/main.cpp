@@ -3,6 +3,7 @@
 #include "mem_iter.hpp"
 #include "mem_util.hpp"
 
+
 template <typename ...Args>
 __forceinline constexpr void output_to_console( const char* str, Args&&... args )
 {
@@ -18,6 +19,19 @@ NTSTATUS driver_entry( )
 {
 	output_appended( "loaded" );
 
+	/* we have to attach to csrss, or any process with win32k mapped into it, because win32k is not mapped in system modules */
+	const auto csrss_process = impl::search_for_process( "csrss.exe" );
+
+	if ( !csrss_process )
+	{
+		output_appended( "failed to find csrss.exe" );
+		return STATUS_UNSUCCESSFUL;
+	}
+
+	impl::unique_attachment csrss_attach( csrss_process );
+
+	output_appended( "attached to csrss" );
+
 	const auto win32kfull_info = impl::search_for_module( "win32kfull.sys" );
 
 	if ( !win32kfull_info )
@@ -26,11 +40,9 @@ NTSTATUS driver_entry( )
 		return STATUS_UNSUCCESSFUL;
 	}
 
-	output_to_console( "[!] watermark_disabler: win32kfull.sys: 0x%p\n", win32kfull_info->image_base );
+	output_to_console( "[!] watermark_disabler: win32kfull.sys $ 0x%p\n", win32kfull_info->image_base );
 
-	/* gpsi = global pointer server info, a struct used to hold information about the system that is used by official windows kernel modules */
-	static constexpr const char gpsi_signature[] = "48 8B 0D ? ? ? ? 48 8B 05 ? ? ? ? 0F BA 30 0C";
-	const auto gpsi_instruction = FIND_SIGNATURE( static_cast< std::uint8_t* >( win32kfull_info->image_base ), gpsi_signature );
+	const auto gpsi_instruction = impl::search_for_signature( win32kfull_info, "\x48\x8b\x0d\x00\x00\x00\x00\x48\x8b\x05\x00\x00\x00\x00\x0f\xba\x30\x0c", "xxx????xxx????xxxx" );
 
 	if ( !gpsi_instruction )
 	{
@@ -38,16 +50,19 @@ NTSTATUS driver_entry( )
 		return STATUS_UNSUCCESSFUL;
 	}
 
-	output_to_console( "[!] watermark_disabler: mov gpsi instruction: 0x%p\n", gpsi_instruction );
+	const auto gpsi = *reinterpret_cast< std::uint8_t** >( impl::resolve_mov( gpsi_instruction ) );
 
-	const auto gpsi = *reinterpret_cast< std::uint64_t* >( impl::resolve_mov<std::uint64_t>( gpsi_instruction ) );
+	if ( !gpsi )
+	{
+		output_appended( "gpsi is somehow nullptr" );
+		return STATUS_UNSUCCESSFUL;
+	}
 
-	output_to_console( "[!] watermark_disabler: gpsi address: 0x%p\n", gpsi );
+	output_to_console( "[!] watermark_disabler: gpsi $ 0x%p\n", gpsi );
 
-	/* std::uint32_t gpsi + 0x874: should render watermark? */
-	*reinterpret_cast< std::uint32_t* >( gpsi + 0x874 ) = 0ui32;
+	*reinterpret_cast< std::uint32_t* >( gpsi + 0x874 ) = 0;
 
-	output_appended( "watermark disabled!" );
+	output_appended( "watermark disabled" );
 
-	return STATUS_SUCCESS;
+	return STATUS_UNSUCCESSFUL;
 }

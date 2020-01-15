@@ -4,7 +4,8 @@
 
 namespace impl
 {
-	extern "C" NTSYSAPI NTSTATUS NTAPI ZwQuerySystemInformation( nt::system_info_class, PVOID, ULONG, PULONG );
+	extern "C" NTSYSAPI NTSTATUS NTAPI ZwQuerySystemInformation( ULONG, PVOID, ULONG, PULONG );
+	extern "C" NTSYSAPI PIMAGE_NT_HEADERS NTAPI RtlImageNtHeader( PVOID );
 
 	nt::rtl_module_info* search_for_module( const char* module_name )
 	{
@@ -15,7 +16,7 @@ namespace impl
 		if ( !buffer_pool.get( ) )
 			return nullptr;
 
-		auto current_status = ZwQuerySystemInformation( nt::system_module_information, buffer_pool.get( ), needed_bytes, &needed_bytes );
+		auto current_status = ZwQuerySystemInformation( 11, buffer_pool.get( ), needed_bytes, &needed_bytes );
 
 		/* keep allocating until the function returns STATUS_SUCCESS */
 		while ( current_status == STATUS_INFO_LENGTH_MISMATCH )
@@ -25,7 +26,7 @@ namespace impl
 			if ( !buffer_pool )
 				return nullptr;
 
-			current_status = ZwQuerySystemInformation( nt::system_module_information, buffer_pool.get( ), needed_bytes, &needed_bytes );
+			current_status = ZwQuerySystemInformation( 11, buffer_pool.get( ), needed_bytes, &needed_bytes );
 		}
 
 		if ( !NT_SUCCESS( current_status ) )
@@ -51,6 +52,26 @@ namespace impl
 				continue;
 
 			return current_module;
+		}
+
+		return nullptr;
+	}
+
+	nt::image_section_header* search_for_section( const nt::rtl_module_info* module, const char* section_name )
+	{
+		if ( !module )
+			return nullptr;
+
+		const auto nt_header = reinterpret_cast< nt::image_nt_headers* >( RtlImageNtHeader( module->image_base ) );
+		const auto section_header = reinterpret_cast< nt::image_section_header* >( nt_header + 1 );
+
+		for ( auto i = 0u; i < nt_header->file_header.number_of_sections; i++ )
+		{
+			const auto current_section = &section_header[ i ];
+			const auto current_section_name = reinterpret_cast< const char* >( current_section->name );
+
+			if ( !std::strcmp( current_section_name, section_name ) )
+				return current_section;
 		}
 
 		return nullptr;
