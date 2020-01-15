@@ -49,6 +49,8 @@ As you can see from the snippets above, this: gpsi->unk874h is checked to be 1 b
 
 ### approach #2
 
-PaintWatermark calls GreExtTextOutWInternal (which is the internal function for ExtTextOutW/NtGdiExtTextOutW in wingdi.h), the argument passed for size is a global called "gSafeModeStrLen", by setting the size to 0, the string won't be rendered. I left below a pattern for the global in win32kfull.
+PaintWatermark calls GreExtTextOutWInternal (which is the internal function for ExtTextOutW/NtGdiExtTextOutW in wingdi.h). 
+
+The argument passed for size is a global called "gSafeModeStrLen", by setting the size to 0, the string won't be rendered. I left below a pattern for the global in win32kfull.
 
 pattern: 44 8B C8 44 89 0D + 7
