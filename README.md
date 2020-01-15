@@ -1,7 +1,7 @@
 ## watermark_disabler
 A simple project made to disable the annoying "Activate Windows" watermark.
 
-### approach 1
+### approach #1
 In win32kfull.sys, there's a function called PaintWatermark that renders the activation watermark, this function gets called by xxxDesktopPaintCallback:
 
 ```cpp
