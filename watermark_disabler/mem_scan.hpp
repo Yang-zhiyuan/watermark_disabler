@@ -2,7 +2,6 @@
 #include "mem_util.hpp"
 #include "mem_iter.hpp"
 #include "util_raii.hpp"
-#include <intrin.h>
 
 namespace impl
 {
