@@ -5,12 +5,12 @@
 
 
 template <typename ...Args>
-__forceinline constexpr void output_to_console( const char* str, Args&&... args )
+__forceinline void output_to_console( const char* str, Args&&... args )
 {
 	DbgPrintEx( 77, 0, str, std::forward<Args>( args )... );
 }
 
-__forceinline constexpr void output_appended( const char* str )
+__forceinline void output_appended( const char* str )
 {
 	output_to_console( "[!] watermark_disabler: %s\n", str );
 }
