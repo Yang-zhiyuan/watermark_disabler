@@ -1,5 +1,5 @@
 ## watermark_disabler
-Disabling "Activate Windows" watermark made simple.
+Disabling "Activate Windows" watermark made simple, the code in this repository is a PoC, and has not been tested above Windows 10 1803.
 
 ## how does this work?
 The function responsible for drawing whole desktop including the watermark is xxxDesktopPaintCallback located in win32kfull.sys.
